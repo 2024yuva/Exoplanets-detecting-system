@@ -1,13 +1,449 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Scientific exoplanet detection dashboard for noisy light-curve denoising, transit detection, classification, and catalog analytics." />
+  <title>Exoplanet Detection System</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <div class="page-shell">
+    <section id="home-screen" class="home-screen">
+      <div class="home-hero panel">
+        <p class="eyebrow">ISRO AI-enabled pipeline</p>
+        <h1>Sector 17 Analysis for Exoplanet Detection</h1>
+        <p class="home-copy">
+          Analyze noisy stellar light curves, compare candidate planets, and review AI detection results in one
+          mission-control style workspace.
+        </p>
+        <div class="home-actions">
+          <button id="get-started-btn" class="primary-btn" type="button">Get Started</button>
+        </div>
+      </div>
+    </section>
+
+    <header class="topbar is-hidden">
+      <div class="brand-block">
+        <p class="eyebrow">AI-enabled exoplanet detection</p>
+        <h1>ISRO AI-Enabled Pipeline</h1>
+      </div>
+      <nav class="topnav">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#pipeline">Detection Pipeline</a>
+        <a href="#analytics">Analytics</a>
+        <a href="#catalog">Catalog</a>
+      </nav>
+    </header>
+
+    <main id="dashboard" class="dashboard-shell is-hidden">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Mission control dashboard</p>
+          <h2>AI-enabled Detection of Exoplanets from Noisy Astronomical Light Curves</h2>
+          <p class="hero-text">
+            Select different planets to compare their light curves, detection confidence, and parameter estimates.
+            The dashboard mirrors the detection flow in the brief, then lets you inspect the resulting candidates.
+          </p>
+          <div class="hero-actions">
+            <button id="run-detection" class="primary-btn" type="button">Run AI pipeline</button>
+          </div>
+          <p id="status" class="status">Bundled TOI catalog is ready. Choose planets below to compare.</p>
+
+          <div class="home-pipeline">
+            <p class="eyebrow">End-to-end flow</p>
+            <div class="home-flow-track">
+              <span>Input</span>
+              <span>AI Denoising</span>
+              <span>Transit Detection</span>
+              <span>Classification</span>
+              <span>Parameter Estimation</span>
+              <span>Visualization</span>
+            </div>
+          </div>
+
+          <div class="run-progress" id="run-progress" aria-live="polite">
+            <div class="run-progress-head">
+              <p class="eyebrow">Pipeline execution</p>
+              <strong id="progress-headline">Idle</strong>
+            </div>
+            <div id="progress-rows" class="progress-rows">
+              <div class="progress-row" data-stage="loading">
+                <span>Loading</span>
+                <div class="progress-track"><i></i></div>
+              </div>
+              <div class="progress-row" data-stage="cleaning">
+                <span>Cleaning</span>
+                <div class="progress-track"><i></i></div>
+              </div>
+              <div class="progress-row" data-stage="normalizing">
+                <span>Normalizing</span>
+                <div class="progress-track"><i></i></div>
+              </div>
+              <div class="progress-row" data-stage="detecting">
+                <span>Detecting Transit</span>
+                <div class="progress-track"><i></i></div>
+              </div>
+              <div class="progress-row" data-stage="classifying">
+                <span>Classifying</span>
+                <div class="progress-track"><i></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="hero-side">
+          <div class="focus-card">
+            <p class="eyebrow">Target control panel</p>
+            <h3 id="focus-toi">No planet selected</h3>
+            <p id="focus-subtitle" class="focus-subtitle">Choose a candidate planet to load the detection workspace.</p>
+            <div class="focus-grid">
+              <div>
+                <span>Classification</span>
+                <strong id="focus-disposition">-</strong>
+              </div>
+              <div>
+                <span>Period</span>
+                <strong id="focus-period">-</strong>
+              </div>
+              <div>
+                <span>Depth</span>
+                <strong id="focus-depth">-</strong>
+              </div>
+              <div>
+                <span>SNR</span>
+                <strong id="focus-snr">-</strong>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="comparison-strip panel">
+        <div class="comparison-head">
+          <div>
+            <p class="eyebrow">Target comparison</p>
+            <h2>Compare two planets</h2>
+          </div>
+          <p class="comparison-note">Pick a primary target and a comparison target from the same catalog.</p>
+        </div>
+        <div class="comparison-controls">
+          <label>
+            <span>Primary target</span>
+            <select id="primary-target-select"></select>
+          </label>
+          <label>
+            <span>Comparison target</span>
+            <select id="comparison-target-select"></select>
+          </label>
+        </div>
+        <div class="comparison-grid">
+          <div class="comparison-card">
+            <p>Primary</p>
+            <strong id="compare-primary-name">-</strong>
+            <span id="compare-primary-meta">-</span>
+          </div>
+          <div class="comparison-card">
+            <p>Comparison</p>
+            <strong id="compare-secondary-name">-</strong>
+            <span id="compare-secondary-meta">-</span>
+          </div>
+          <div class="comparison-card comparison-diff">
+            <p>Delta</p>
+            <strong id="compare-delta-period">Period: -</strong>
+            <span id="compare-delta-confidence">Confidence: -</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="pipeline" class="pipeline-shell">
+        <article class="pipeline-card panel pipeline-card-raw">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">1. Noisy light curve</p>
+              <h3>Raw flux measurements over time</h3>
+            </div>
+          </div>
+          <svg id="raw-chart" class="signal-chart" viewBox="0 0 620 250" aria-label="Raw noisy light curve"></svg>
+          <div class="legend">
+            <span><i class="dot dot-measurement"></i>Measurements</span>
+            <span><i class="dot dot-outlier"></i>Outliers</span>
+            <span><i class="dot dot-transit"></i>Transit dip</span>
+          </div>
+        </article>
+
+        <article class="pipeline-card panel pipeline-card-ai">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">2. AI pipeline</p>
+              <h3>Deep-learning inspired detection flow</h3>
+            </div>
+          </div>
+          <div class="pipeline-flow">
+            <div class="flow-node">
+              <span>Input</span>
+              <strong>Noisy Light Curve</strong>
+            </div>
+            <div class="flow-arrow"></div>
+            <div class="flow-node">
+              <span>Denoising</span>
+              <strong>Autoencoder</strong>
+            </div>
+            <div class="flow-arrow"></div>
+            <div class="flow-node">
+              <span>Feature extraction</span>
+              <strong>Transit Features</strong>
+            </div>
+            <div class="flow-arrow"></div>
+            <div class="flow-node">
+              <span>Transit detection</span>
+              <strong>Classifier</strong>
+            </div>
+            <div class="flow-arrow"></div>
+            <div class="flow-node flow-node-output">
+              <span>Output</span>
+              <strong id="pipeline-output">Detection probability</strong>
+              <em id="pipeline-confidence">0.00</em>
+            </div>
+          </div>
+          <div class="training-loop">Training feedback loop</div>
+        </article>
+
+        <article class="pipeline-card panel pipeline-card-denoised">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">3. Model denoised light curve</p>
+              <h3>Noise reduced, transit preserved</h3>
+            </div>
+          </div>
+          <svg id="denoised-chart" class="signal-chart compact-chart" viewBox="0 0 620 220"
+            aria-label="Denoised light curve"></svg>
+        </article>
+
+        <article class="pipeline-card panel pipeline-card-probability">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">4. Transit probability over time</p>
+              <h3>AI-estimated transit probability at each time point</h3>
+            </div>
+          </div>
+          <svg id="probability-chart" class="signal-chart compact-chart" viewBox="0 0 620 220"
+            aria-label="Transit probability chart"></svg>
+        </article>
+
+        <article class="pipeline-card panel pipeline-card-result">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">5. Detection result</p>
+              <h3>Identified exoplanet candidate</h3>
+            </div>
+          </div>
+          <div class="result-stack">
+            <div class="result-badge" id="result-badge">Awaiting analysis</div>
+            <p id="result-confidence-tier" class="confidence-tier">Awaiting confidence tier</p>
+            <div class="result-metrics">
+              <div>
+                <span>Confidence</span>
+                <strong id="result-confidence">-</strong>
+              </div>
+              <div>
+                <span>Classification</span>
+                <strong id="result-classification">-</strong>
+              </div>
+              <div>
+                <span>Duration</span>
+                <strong id="result-duration">-</strong>
+              </div>
+              <div>
+                <span>Depth</span>
+                <strong id="result-depth">-</strong>
+              </div>
+            </div>
+            <div class="result-reasons">
+              <p class="eyebrow">Explanation</p>
+              <ul id="reason-list">
+                <li>Load a dataset to generate the full decision explanation.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="scientific-results" class="section-block">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Scientific results</p>
+            <h2>Estimated parameters and mission summary</h2>
+          </div>
+        </div>
+        <div class="metric-grid">
+          <article class="metric-card">
+            <p>Target count</p>
+            <strong id="metric-total">-</strong>
+            <span>Rows parsed from the active TOI catalog</span>
+          </article>
+          <article class="metric-card">
+            <p>Candidate systems</p>
+            <strong id="metric-kp">-</strong>
+            <span>KP-tagged or strong candidate detections</span>
+          </article>
+          <article class="metric-card">
+            <p>High SNR targets</p>
+            <strong id="metric-snr">-</strong>
+            <span>Targets with planet SNR of 50 or higher</span>
+          </article>
+          <article class="metric-card">
+            <p>Median orbital period</p>
+            <strong id="metric-period">-</strong>
+            <span>Median period across valid detections</span>
+          </article>
+        </div>
+
+        <div class="parameter-grid">
+          <article class="parameter-card">
+            <p>Period</p>
+            <strong id="param-period">-</strong>
+          </article>
+          <article class="parameter-card">
+            <p>Depth</p>
+            <strong id="param-depth">-</strong>
+          </article>
+          <article class="parameter-card">
+            <p>Duration</p>
+            <strong id="param-duration">-</strong>
+          </article>
+          <article class="parameter-card">
+            <p>SNR</p>
+            <strong id="param-snr">-</strong>
+          </article>
+        </div>
+
+        <div class="signal-classes">
+          <p class="eyebrow">Signal classification outputs</p>
+          <div class="class-pill-row">
+            <span class="pill">Transit</span>
+            <span class="pill">Eclipsing Binary</span>
+            <span class="pill">Blend</span>
+            <span class="pill">Other</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="analytics" class="section-block">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Analytics tab content</p>
+            <h2>Distributions, planet mix, and follow-up prioritization</h2>
+          </div>
+        </div>
+
+        <div class="layout-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Project alignment</p>
+                <h3>Why this layout fits the brief</h3>
+              </div>
+            </div>
+            <ul class="notes-list">
+              <li>The top half now tells the detection story first, matching the reference image’s philosophy.</li>
+              <li>Raw signal, denoising, transit probability, and result explanation stay visible in one screen.</li>
+              <li>The lower half keeps the useful analytics you already wanted: distributions, queueing, and catalog
+                exploration.</li>
+              <li>The large CTL dataset remains preserved, but the lighter TOI catalog drives the browser experience.
+              </li>
+            </ul>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Disposition distribution</p>
+                <h3>Confirmed vs candidate landscape</h3>
+              </div>
+            </div>
+            <div id="disposition-bars" class="bars"></div>
+          </article>
+        </div>
+
+        <div class="layout-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Planet landscape</p>
+                <h3>Period vs radius sample</h3>
+              </div>
+            </div>
+            <svg id="scatter-plot" class="scatter-plot" viewBox="0 0 640 320" aria-label="Scatter plot"></svg>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Follow-up queue</p>
+                <h3>Best next candidates</h3>
+              </div>
+            </div>
+            <div id="follow-up-list" class="follow-up-list"></div>
+          </article>
+        </div>
+
+        <div class="layout-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Source contribution</p>
+                <h3>Top detection pipelines</h3>
+              </div>
+            </div>
+            <div id="source-bars" class="bars"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Planet classes</p>
+                <h3>Radius family mix</h3>
+              </div>
+            </div>
+            <div id="radius-bars" class="bars"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="catalog" class="section-block panel catalog-panel">
+        <div class="panel-head search-head">
+          <div>
+            <p class="eyebrow">Catalog</p>
+            <h2>Selected TOI candidates</h2>
+          </div>
+        </div>
+        <div class="table-shell">
+          <table>
+            <thead>
+              <tr>
+                <th>TIC ID</th>
+                <th>TOI</th>
+                <th>Disposition</th>
+                <th>Period</th>
+                <th>Radius</th>
+                <th>SNR</th>
+                <th>Source</th>
+                <th>Comments</th>
+              </tr>
+            </thead>
+            <tbody id="catalog-body">
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+
 </html>

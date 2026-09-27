@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="ExoScope — Explore worlds beyond our solar system. An interactive visual guide to exoplanets, featuring size comparisons with Earth, detection methods, and AI-powered discovery." />
+  <title>ExoScope — Explore Worlds Beyond Our Solar System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./exoscope.css" />
+</head>
+
+<body>
+  <!-- ===== STARFIELD CANVAS ===== -->
+  <canvas id="starfield"></canvas>
+
+  <!-- ===== NAVIGATION ===== -->
+  <nav id="main-nav" class="main-nav">
+    <div class="nav-inner">
+      <a href="#hero" class="nav-brand">
+        <svg class="nav-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="14" stroke="url(#logo-grad)" stroke-width="2" fill="none" />
+          <circle cx="16" cy="16" r="5" fill="url(#logo-grad)" />
+          <ellipse cx="16" cy="16" rx="14" ry="6" stroke="url(#logo-grad)" stroke-width="1.2" fill="none"
+            transform="rotate(-20 16 16)" />
+          <defs>
+            <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#60a5fa" />
+              <stop offset="100%" stop-color="#a78bfa" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>ExoScope</span>
+      </a>
+      <div class="nav-links">
+        <a href="#what-is" data-nav="what-is">What Are Exoplanets?</a>
+        <a href="#size-explorer" data-nav="size-explorer">Size Explorer</a>
+        <a href="#explore" data-nav="explore">Explore</a>
+        <a href="#detection" data-nav="detection">Detection</a>
+        <a href="#ai-connection" data-nav="ai-connection">AI</a>
+      </div>
+      <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="nav-mobile" id="nav-mobile">
+      <a href="#what-is" data-nav="what-is">What Are Exoplanets?</a>
+      <a href="#size-explorer" data-nav="size-explorer">Size Explorer</a>
+      <a href="#explore" data-nav="explore">Explore</a>
+      <a href="#detection" data-nav="detection">Detection</a>
+      <a href="#ai-connection" data-nav="ai-connection">AI</a>
+    </div>
+  </nav>
+
+  <!-- ===== 1. HERO ===== -->
+  <section id="hero" class="hero-section">
+    <div class="hero-content">
+      <p class="hero-eyebrow">ExoScope</p>
+      <h1 class="hero-title">Explore Worlds Beyond<br />Our Solar System</h1>
+      <p class="hero-subtitle">An exoplanet is a planet that orbits a star outside our solar system. Thousands have been
+        discovered — each one a new world waiting to be understood.</p>
+      <a href="#size-explorer" class="hero-cta">
+        <span>Explore Exoplanets</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12" />
+          <polyline points="12 5 19 12 12 19" />
+        </svg>
+      </a>
+    </div>
+    <div class="hero-viz">
+      <canvas id="hero-planet-canvas" width="600" height="600"></canvas>
+    </div>
+    <div class="hero-scroll-hint">
+      <span>Scroll to explore</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    </div>
+  </section>
+
+  <!-- ===== 2. WHAT IS AN EXOPLANET? ===== -->
+  <section id="what-is" class="section what-is-section">
+    <div class="section-inner">
+      <p class="section-eyebrow">The basics</p>
+      <h2 class="section-title">What Is an Exoplanet?</h2>
+      <div class="what-is-grid">
+        <div class="what-is-visual">
+          <canvas id="solar-system-canvas" width="500" height="500"></canvas>
+        </div>
+        <div class="what-is-cards">
+          <div class="info-card" data-animate>
+            <div class="info-card-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="4" />
+                <line x1="21.17" y1="8" x2="12" y2="8" />
+                <line x1="3.95" y1="6.06" x2="8.54" y2="14" />
+                <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
+              </svg>
+            </div>
+            <h3>A planet, but not ours</h3>
+            <p>An exoplanet is simply a planet that orbits a star other than our Sun. Just like Earth orbits the Sun,
+              exoplanets orbit their own distant stars.</p>
+          </div>
+          <div class="info-card" data-animate>
+            <div class="info-card-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </div>
+            <h3>Thousands discovered</h3>
+            <p>Since the first confirmed discovery in 1992, astronomers have found over 5,500 exoplanets. Many more
+              await confirmation.</p>
+          </div>
+          <div class="info-card" data-animate>
+            <div class="info-card-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M2 12h20" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+              </svg>
+            </div>
+            <h3>Every size and shape</h3>
+            <p>Some are rocky like Earth, others are gas giants far bigger than Jupiter. Some orbit so close to their
+              star they glow red-hot.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 3. SIZE EXPLORER ===== -->
+  <section id="size-explorer" class="section size-section">
+    <div class="section-inner">
+      <p class="section-eyebrow">Signature feature</p>
+      <h2 class="section-title">How Big Are They?</h2>
+      <p class="section-subtitle">Select an exoplanet to see its size compared to Earth — proportionally scaled in real
+        time.</p>
+      <div class="size-explorer-container">
+        <div class="size-planet-selector">
+          <div class="size-selector-pills" id="size-selector-pills">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+        <div class="size-comparison-stage">
+          <div class="size-planet-group">
+            <div class="size-planet-wrapper" id="earth-wrapper">
+              <div class="size-planet earth-planet" id="earth-sphere">
+                <div class="planet-inner earth-inner"></div>
+              </div>
+              <p class="size-planet-label">Earth</p>
+              <p class="size-planet-radius">1.0× Earth</p>
+            </div>
+            <div class="size-vs">vs</div>
+            <div class="size-planet-wrapper" id="exo-wrapper">
+              <div class="size-planet exo-planet" id="exo-sphere">
+                <div class="planet-inner exo-inner"></div>
+              </div>
+              <p class="size-planet-label" id="exo-name">TRAPPIST-1e</p>
+              <p class="size-planet-radius" id="exo-radius-label">0.92× Earth</p>
+            </div>
+          </div>
+          <div class="size-info-panel" id="size-info-panel">
+            <div class="size-info-row">
+              <span class="size-info-key">Planet type</span>
+              <span class="size-info-value" id="size-info-type">Rocky / Terrestrial</span>
+            </div>
+            <div class="size-info-row">
+              <span class="size-info-key">Mass</span>
+              <span class="size-info-value" id="size-info-mass">0.69× Earth</span>
+            </div>
+            <div class="size-info-row">
+              <span class="size-info-key">Orbital period</span>
+              <span class="size-info-value" id="size-info-period">6.1 days</span>
+            </div>
+            <div class="size-info-row">
+              <span class="size-info-key">Distance</span>
+              <span class="size-info-value" id="size-info-distance">39 light-years</span>
+            </div>
+            <div class="size-info-row">
+              <span class="size-info-key">Discovery method</span>
+              <span class="size-info-value" id="size-info-method">Transit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 4. EXPLORE EXOPLANETS ===== -->
+  <section id="explore" class="section explore-section">
+    <div class="section-inner">
+      <p class="section-eyebrow">Catalog</p>
+      <h2 class="section-title">Explore Exoplanets</h2>
+      <div class="explore-controls">
+        <div class="explore-search-wrapper">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" id="explore-search" class="explore-search" placeholder="Search exoplanets..." />
+        </div>
+        <div class="explore-filters">
+          <select id="filter-type" class="explore-filter">
+            <option value="all">All Types</option>
+            <option value="Rocky / Terrestrial">Rocky</option>
+            <option value="Super-Earth">Super-Earth</option>
+            <option value="Mini-Neptune">Mini-Neptune</option>
+            <option value="Ice Giant">Ice Giant</option>
+            <option value="Gas Giant">Gas Giant</option>
+            <option value="Hot Jupiter">Hot Jupiter</option>
+          </select>
+          <select id="filter-size" class="explore-filter">
+            <option value="all">All Sizes</option>
+            <option value="smaller">Smaller than Earth</option>
+            <option value="similar">Earth-sized (0.8–1.5×)</option>
+            <option value="super">Super-Earths (1.5–4×)</option>
+            <option value="large">Large (4×+)</option>
+          </select>
+        </div>
+      </div>
+      <div class="explore-grid" id="explore-grid">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 5. PLANET DETAIL MODAL ===== -->
+  <div class="detail-overlay" id="detail-overlay">
+    <div class="detail-modal" id="detail-modal">
+      <button class="detail-close" id="detail-close" aria-label="Close">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+      <div class="detail-content">
+        <div class="detail-planet-viz">
+          <div class="detail-planet-sphere" id="detail-sphere">
+            <div class="planet-inner" id="detail-inner"></div>
+          </div>
+        </div>
+        <div class="detail-info">
+          <p class="detail-type-badge" id="detail-type-badge">Rocky</p>
+          <h2 class="detail-name" id="detail-name">Planet Name</h2>
+          <p class="detail-description" id="detail-description">Description here...</p>
+          <div class="detail-stats">
+            <div class="detail-stat">
+              <span class="detail-stat-label">Radius</span>
+              <span class="detail-stat-value" id="detail-radius">—</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-label">Mass</span>
+              <span class="detail-stat-value" id="detail-mass">—</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-label">Orbital Period</span>
+              <span class="detail-stat-value" id="detail-period">—</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-label">Distance</span>
+              <span class="detail-stat-value" id="detail-distance">—</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-label">Discovery Method</span>
+              <span class="detail-stat-value" id="detail-method">—</span>
+            </div>
+            <div class="detail-stat detail-stat-full">
+              <span class="detail-stat-label">What does this mean?</span>
+              <span class="detail-stat-value detail-explain" id="detail-explain">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 6. HOW DO WE DETECT? ===== -->
+  <section id="detection" class="section detection-section">
+    <div class="section-inner">
+      <p class="section-eyebrow">The method</p>
+      <h2 class="section-title">How Do We Detect Exoplanets?</h2>
+      <p class="section-subtitle">Most exoplanets are found using the <strong>transit method</strong> — watching a star
+        for tiny dips in brightness when a planet passes in front of it.</p>
+      <div class="detection-demo">
+        <div class="detection-animation">
+          <canvas id="transit-canvas" width="700" height="350"></canvas>
+          <p class="detection-caption" id="transit-caption">Watch the planet cross in front of the star...</p>
+        </div>
+        <div class="detection-lightcurve">
+          <p class="section-eyebrow">Light curve</p>
+          <h3>Star brightness over time</h3>
+          <canvas id="lightcurve-canvas" width="700" height="250"></canvas>
+          <p class="detection-explain">When the planet crosses in front of its star, it blocks a tiny amount of light.
+            This creates a <strong>"dip"</strong> in the light curve — that dip is how we know a planet is there.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 7. AI CONNECTION ===== -->
+  <section id="ai-connection" class="section ai-section">
+    <div class="section-inner">
+      <p class="section-eyebrow">Where AI meets astronomy</p>
+      <h2 class="section-title">Our AI Connection</h2>
+      <p class="section-subtitle">Real astronomical data is incredibly noisy. Machine learning helps us find faint
+        planet signals hidden in the chaos.</p>
+      <div class="ai-pipeline">
+        <div class="ai-pipeline-step" data-animate>
+          <div class="ai-step-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+          </div>
+          <h3>Light Curve</h3>
+          <p>Raw brightness measurements from a telescope — full of noise, instrument errors, and cosmic interference.
+          </p>
+        </div>
+        <div class="ai-pipeline-arrow">
+          <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="0" y1="12" x2="36" y2="12" />
+            <polyline points="30 6 36 12 30 18" />
+          </svg>
+        </div>
+        <div class="ai-pipeline-step" data-animate>
+          <div class="ai-step-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+              <line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+          </div>
+          <h3>Preprocessing</h3>
+          <p>The data is cleaned, normalized, and prepared — removing systematic errors while preserving real signals.
+          </p>
+        </div>
+        <div class="ai-pipeline-arrow">
+          <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="0" y1="12" x2="36" y2="12" />
+            <polyline points="30 6 36 12 30 18" />
+          </svg>
+        </div>
+        <div class="ai-pipeline-step" data-animate>
+          <div class="ai-step-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 2a4 4 0 0 1 4 4c0 2-2 3-2 6h-4c0-3-2-4-2-6a4 4 0 0 1 4-4z" />
+              <line x1="10" y1="16" x2="14" y2="16" />
+              <line x1="10" y1="19" x2="14" y2="19" />
+              <line x1="11" y1="22" x2="13" y2="22" />
+            </svg>
+          </div>
+          <h3>AI Model</h3>
+          <p>A deep-learning neural network analyzes the processed light curve, trained to recognize transit patterns.
+          </p>
+        </div>
+        <div class="ai-pipeline-arrow">
+          <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="0" y1="12" x2="36" y2="12" />
+            <polyline points="30 6 36 12 30 18" />
+          </svg>
+        </div>
+        <div class="ai-pipeline-step ai-pipeline-step-final" data-animate>
+          <div class="ai-step-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+          <h3>Prediction</h3>
+          <p>The model outputs a probability: <em>Is there a planet here?</em> High-confidence signals become new
+            exoplanet candidates.</p>
+        </div>
+      </div>
+      <div class="ai-summary-card" data-animate>
+        <div class="ai-summary-glow"></div>
+        <h3>From Noise to Discovery</h3>
+        <p>Our project uses this exact pipeline. We take noisy TESS/Kepler light curves, denoise them with
+          autoencoders, detect transit dips, and classify candidates — all powered by machine learning. The
+          visualizations you explored above are the <em>output</em> of this AI-driven process.</p>
+        <a href="./index.html" class="ai-summary-link">
+          <span>View the AI Detection Dashboard</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <svg class="nav-logo" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="14" stroke="url(#logo-grad2)" stroke-width="2" fill="none" />
+          <circle cx="16" cy="16" r="5" fill="url(#logo-grad2)" />
+          <ellipse cx="16" cy="16" rx="14" ry="6" stroke="url(#logo-grad2)" stroke-width="1.2" fill="none"
+            transform="rotate(-20 16 16)" />
+          <defs>
+            <linearGradient id="logo-grad2" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#60a5fa" />
+              <stop offset="100%" stop-color="#a78bfa" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>ExoScope</span>
+      </div>
+      <p class="footer-copy">An educational visualization project connecting exoplanet science with AI-powered
+        detection.</p>
+      <div class="footer-links">
+        <a href="#hero">Home</a>
+        <a href="#size-explorer">Size Explorer</a>
+        <a href="#explore">Explore</a>
+        <a href="#detection">Detection</a>
+        <a href="#ai-connection">AI</a>
+        <a href="./index.html">Dashboard</a>
+      </div>
+      <p class="footer-copy footer-copy-sm">&copy; 2026 ExoScope &mdash; Exoplanet Detection System</p>
+    </div>
+  </footer>
+
+  <script src="./exoscope.js"></script>
+</body>
+
+</html>

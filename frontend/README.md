@@ -1,16 +1,45 @@
-# React + Vite
+# Exoplanet Detection Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This frontend was rebuilt as a static dashboard after removing the npm/Vite scaffold.
 
-Currently, two official plugins are available:
+## Files
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `index.html`: dashboard shell
+- `styles.css`: visual system
+- `app.js`: CSV parsing, metrics, charts, and catalog filtering
+- `dataset_exoplanets/`: preserved dataset folder
 
-## React Compiler
+## Dataset behavior
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The dashboard is designed around `dataset_exoplanets/tois.csv`.
 
-## Expanding the Oxlint configuration
+- Use the `Load bundled TOI catalog` button when serving the folder over HTTP.
+- Use `Load CSV manually` if the browser blocks direct file fetches.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Real light-curve upload
+
+You can now run the detection pipeline on a dedicated light-curve file.
+
+- Use `Upload light curve` to select a `.csv` or `.txt` file.
+- The file must include at least two numeric columns (time, flux).
+- After upload, click `Run detection pipeline` to generate raw, denoised, probability, and classification outputs from the uploaded signal.
+
+## Run locally
+
+From the project root:
+
+```bash
+uvicorn main:app --host 127.0.0.1 --port 8000
+python serve_dashboard.py
+```
+
+Then open `http://127.0.0.1:8080/`.
+
+Notes:
+
+- The dashboard uses `http://127.0.0.1:8000` for uploaded light-curve model inference.
+- If the API is not running, uploaded curves will fall back to local browser-side analysis.
+
+## Why this rebuild exists
+
+The original frontend depended on npm packages, but npm registry access on this machine was blocked. This version keeps the project moving without requiring package installation.

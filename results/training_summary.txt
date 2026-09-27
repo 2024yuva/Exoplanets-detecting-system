@@ -1,0 +1,44 @@
+
+==================================================
+CNN-LSTM Training Summary
+==================================================
+
+Training Samples   : 5642
+Validation Samples : 1209
+Testing Samples    : 1210
+
+Input Shape        : (20, 1)
+
+Epochs Trained     : 54
+
+Best Train Accuracy: 0.5209
+
+Best Val Accuracy  : 0.5401
+
+Best Train Loss    : 0.8938
+
+Best Val Loss      : 1.1686
+
+Final Test Accuracy: 0.5149
+
+Final Test Loss    : 1.1961
+
+Saved Model:
+
+models/cnn_lstm_exoplanet.keras
+
+Generated Files:
+
+accuracy.png
+
+loss.png
+
+confusion_matrix.png
+
+classification_report.txt
+
+model_summary.txt
+
+training_history.npz
+
+==================================================

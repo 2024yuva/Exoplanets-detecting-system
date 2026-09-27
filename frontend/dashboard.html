@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Exoplanet Detection System — AI-powered transit photometry analysis dashboard for discovering exoplanets using deep learning and TESS data." />
+  <title>Exoplanet Detection System</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- React + ReactDOM (CDN) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Recharts (CDN) -->
+  <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
+
+  <!-- Babel standalone for JSX (dev only) -->
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons (CDN) -->
+  <script crossorigin src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+
+  <style>
+    /* ============================================
+       EXOPLANET DETECTION SYSTEM — Full Design
+       ============================================ */
+
+    :root {
+      --bg-primary: #060a14;
+      --bg-secondary: #0d1221;
+      --bg-card: #111a2e;
+      --bg-card-hover: #152036;
+      --bg-input: #0a0f1d;
+      --bg-elevated: rgba(17, 26, 46, 0.85);
+      --border-dim: #162040;
+      --border-default: #1e3060;
+      --border-bright: #2a4580;
+      --text-primary: #e8ecf8;
+      --text-secondary: #8b95b8;
+      --text-muted: #5a6585;
+      --text-dim: #3d4766;
+      --indigo-400: #818cf8;
+      --indigo-500: #6366f1;
+      --indigo-600: #4f46e5;
+      --green-400: #4ade80;
+      --green-500: #22c55e;
+      --yellow-400: #facc15;
+      --red-400: #f87171;
+      --cyan-400: #22d3ee;
+      --purple-400: #c084fc;
+      --orange-400: #fb923c;
+      --pink-400: #f472b6;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Starfield */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(1.5px 1.5px at 15% 25%, rgba(255,255,255,0.18) 50%, transparent 100%),
+        radial-gradient(1px 1px at 35% 65%, rgba(130,140,255,0.12) 50%, transparent 100%),
+        radial-gradient(1.2px 1.2px at 55% 15%, rgba(255,255,255,0.12) 50%, transparent 100%),
+        radial-gradient(1px 1px at 75% 55%, rgba(200,200,255,0.1) 50%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 8% 85%, rgba(130,140,255,0.15) 50%, transparent 100%),
+        radial-gradient(1px 1px at 92% 35%, rgba(130,140,255,0.1) 50%, transparent 100%),
+        radial-gradient(0.8px 0.8px at 48% 48%, rgba(255,255,255,0.06) 50%, transparent 100%),
+        radial-gradient(1.3px 1.3px at 22% 58%, rgba(255,255,255,0.1) 50%, transparent 100%),
+        radial-gradient(0.6px 0.6px at 78% 82%, rgba(200,200,255,0.12) 50%, transparent 100%),
+        radial-gradient(1px 1px at 65% 42%, rgba(100,130,255,0.08) 50%, transparent 100%);
+      pointer-events: none;
+    }
+
+    /* Nebula glow */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -20%;
+      right: -10%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(ellipse, rgba(99, 102, 241, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #root {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+    }
+
+    ::selection { background: rgba(99, 102, 241, 0.3); color: var(--text-primary); }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+
+    /* Animations */
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; filter: drop-shadow(0 0 3px var(--indigo-400)); }
+      50% { opacity: 0.65; filter: drop-shadow(0 0 10px var(--indigo-500)); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Header */
+    .header {
+      border-bottom: 1px solid var(--border-dim);
+      background: rgba(6, 10, 20, 0.88);
+      backdrop-filter: blur(18px);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: 16px;
+    }
+    .header-brand { display: flex; align-items: center; gap: 14px; }
+    .header-icon { color: var(--indigo-400); animation: pulseGlow 2.5s ease-in-out infinite; flex-shrink: 0; }
+    .header-title { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.03em; }
+    .header-sub { font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
+
+    /* Tabs */
+    .tab-nav { display: flex; background: var(--bg-secondary); border-radius: var(--radius-md); padding: 3px; border: 1px solid var(--border-dim); gap: 2px; }
+    .tab-btn {
+      padding: 7px 18px; font-size: 0.8rem; font-weight: 500; font-family: var(--font-sans);
+      border-radius: var(--radius-sm); border: none; cursor: pointer;
+      transition: all var(--transition-fast); color: var(--text-muted); background: transparent; white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+    .tab-btn.active { background: var(--indigo-600); color: white; box-shadow: 0 2px 14px rgba(79, 70, 229, 0.45); }
+
+    /* Main */
+    .main { padding: 22px 28px; animation: fadeIn 0.35s ease-out; }
+
+    /* Dashboard grid */
+    .dash-grid { display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start; }
+    @media (max-width: 1024px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    /* Panel */
+    .panel {
+      background: var(--bg-card); border: 1px solid var(--border-dim);
+      border-radius: var(--radius-lg); padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35), 0 0 1px rgba(255,255,255,0.04);
+      transition: border-color var(--transition-normal);
+    }
+    .panel:hover { border-color: var(--border-default); }
+
+    .panel-title {
+      font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+      padding-bottom: 14px; border-bottom: 1px solid var(--border-dim);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .panel-title svg { width: 16px; height: 16px; color: var(--indigo-400); }
+
+    /* Form */
+    .form-group { margin-top: 14px; }
+    .form-label { display: block; font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 5px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md); padding: 9px 12px;
+      font-size: 0.82rem; font-family: var(--font-sans); color: var(--text-primary);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast); outline: none;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--indigo-500); box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--text-dim); }
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6585' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px;
+    }
+    .form-textarea { resize: vertical; min-height: 65px; }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%; background: linear-gradient(135deg, var(--indigo-600), var(--indigo-500));
+      color: white; font-weight: 600; font-family: var(--font-sans); font-size: 0.82rem;
+      padding: 10px 18px; border-radius: var(--radius-md); border: none; cursor: pointer;
+      transition: all var(--transition-fast);
+      box-shadow: 0 2px 14px rgba(79, 70, 229, 0.35);
+      display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 18px;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--indigo-500), var(--indigo-400));
+      box-shadow: 0 4px 22px rgba(99,102,241,0.5); transform: translateY(-1px);
+    }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-demo {
+      width: 100%; background: linear-gradient(135deg, rgba(34,211,238,0.1), rgba(129,140,248,0.1));
+      color: var(--cyan-400); font-weight: 600; font-family: var(--font-sans); font-size: 0.78rem;
+      padding: 8px 14px; border-radius: var(--radius-md);
+      border: 1px solid rgba(34,211,238,0.18); cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px;
+    }
+    .btn-demo:hover { background: linear-gradient(135deg, rgba(34,211,238,0.18), rgba(129,140,248,0.18)); border-color: rgba(34,211,238,0.35); transform: translateY(-1px); }
+
+    /* Results */
+    .results { display: flex; flex-direction: column; gap: 18px; }
+
+    /* Demo banner */
+    .demo-banner {
+      display: flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, rgba(34,211,238,0.06), rgba(129,140,248,0.06));
+      border: 1px solid rgba(34,211,238,0.12); border-radius: var(--radius-md);
+      padding: 9px 14px; font-size: 0.76rem; color: var(--cyan-400); animation: fadeIn 0.4s ease-out;
+    }
+    .demo-banner svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    /* Metrics grid */
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; animation: slideUp 0.4s ease-out; }
+    @media (max-width: 768px) { .metrics-grid { grid-template-columns: 1fr 1fr; } }
+
+    .metric-card {
+      background: var(--bg-card); border: 1px solid var(--border-dim);
+      border-radius: var(--radius-lg); padding: 16px 18px;
+      box-shadow: 0 3px 16px rgba(0,0,0,0.3);
+      transition: all var(--transition-normal); position: relative; overflow: hidden;
+    }
+    .metric-card::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--indigo-500), transparent);
+      opacity: 0; transition: opacity var(--transition-normal);
+    }
+    .metric-card:hover { border-color: var(--border-default); transform: translateY(-2px); }
+    .metric-card:hover::after { opacity: 1; }
+
+    .metric-label { font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .metric-val { font-size: 1.2rem; font-weight: 700; margin-top: 5px; line-height: 1.2; }
+    .metric-val.indigo { color: var(--indigo-400); }
+    .metric-val.green { color: var(--green-400); }
+    .metric-val.yellow { color: var(--yellow-400); }
+    .metric-mono { font-size: 1.2rem; font-weight: 600; font-family: var(--font-mono); color: var(--text-primary); margin-top: 5px; }
+
+    /* Charts */
+    .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; animation: slideUp 0.5s ease-out; }
+    @media (max-width: 1200px) { .charts-grid { grid-template-columns: 1fr; } }
+
+    .chart-panel {
+      background: var(--bg-card); border: 1px solid var(--border-dim);
+      border-radius: var(--radius-lg); padding: 18px;
+      box-shadow: 0 3px 16px rgba(0,0,0,0.3);
+      transition: border-color var(--transition-normal);
+    }
+    .chart-panel:hover { border-color: var(--border-default); }
+    .chart-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .dot-cyan { background: var(--cyan-400); box-shadow: 0 0 7px var(--cyan-400); }
+    .dot-indigo { background: var(--indigo-400); box-shadow: 0 0 7px var(--indigo-400); }
+    .dot-green { background: var(--green-400); box-shadow: 0 0 7px var(--green-400); }
+    .dot-purple { background: var(--purple-400); box-shadow: 0 0 7px var(--purple-400); }
+    .chart-container { height: 250px; width: 100%; }
+
+    /* Probability bars */
+    .prob-bars { display: flex; flex-direction: column; gap: 14px; padding: 8px 0; }
+    .prob-item { display: flex; flex-direction: column; gap: 5px; }
+    .prob-header { font-size: 0.74rem; color: var(--text-secondary); display: flex; justify-content: space-between; }
+    .prob-val { font-family: var(--font-mono); font-weight: 600; font-size: 0.74rem; }
+    .prob-track { width: 100%; height: 7px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+    .prob-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+    .prob-fill-green { background: linear-gradient(90deg, var(--green-500), var(--green-400)); box-shadow: 0 0 10px rgba(74,222,128,0.25); }
+    .prob-fill-indigo { background: linear-gradient(90deg, var(--indigo-600), var(--indigo-400)); box-shadow: 0 0 10px rgba(99,102,241,0.25); }
+    .prob-fill-orange { background: linear-gradient(90deg, var(--orange-400), var(--yellow-400)); box-shadow: 0 0 10px rgba(251,146,60,0.25); }
+
+    /* Empty state */
+    .empty-state {
+      background: var(--bg-card); border: 2px dashed var(--border-dim);
+      border-radius: var(--radius-xl); min-height: 380px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--text-muted); gap: 12px; padding: 40px;
+    }
+    .empty-state svg { width: 48px; height: 48px; color: var(--text-dim); opacity: 0.5; }
+    .empty-state p { font-size: 0.82rem; max-width: 320px; text-align: center; line-height: 1.5; }
+
+    /* Table */
+    .catalog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .catalog-title { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+    .catalog-title svg { width: 20px; height: 20px; color: var(--indigo-400); }
+    .catalog-sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+    .catalog-empty { font-size: 0.82rem; color: var(--text-dim); padding: 44px 0; text-align: center; }
+
+    .table-wrap { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-dim); }
+    .data-table { width: 100%; text-align: left; border-collapse: collapse; background: var(--bg-input); }
+    .data-table thead tr { border-bottom: 1px solid var(--border-dim); background: rgba(17,26,46,0.6); }
+    .data-table th { padding: 11px 14px; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+    .data-table tbody tr { border-bottom: 1px solid rgba(22,32,64,0.5); transition: background var(--transition-fast); }
+    .data-table tbody tr:last-child { border-bottom: none; }
+    .data-table tbody tr:hover { background: rgba(17,26,46,0.4); }
+    .data-table td { padding: 11px 14px; font-size: 0.8rem; }
+    .td-id { color: var(--indigo-400); font-family: var(--font-mono); font-weight: 700; }
+    .td-cls { color: #d0d4e8; }
+    .td-green { color: var(--green-400); font-family: var(--font-mono); }
+    .td-white { color: var(--text-primary); font-family: var(--font-mono); }
+    .td-yellow { color: var(--yellow-400); font-family: var(--font-mono); }
+    .td-notes { color: var(--text-muted); font-size: 0.72rem; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .badge { display: inline-block; padding: 3px 9px; border-radius: var(--radius-sm); font-size: 0.68rem; font-weight: 600; }
+    .badge-routine { background: rgba(90,101,133,0.12); color: var(--text-muted); }
+    .badge-high { background: rgba(250,204,21,0.08); color: var(--yellow-400); border: 1px solid rgba(250,204,21,0.18); }
+    .badge-immediate { background: rgba(248,113,113,0.08); color: var(--red-400); border: 1px solid rgba(248,113,113,0.18); }
+
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.25); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+
+    @media (max-width: 768px) {
+      .header { flex-direction: column; gap: 10px; padding: 12px 14px; }
+      .main { padding: 14px; }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+    const {
+      ResponsiveContainer, AreaChart, Area, ScatterChart, Scatter,
+      BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line
+    } = Recharts;
+
+    // ====== LUCIDE ICON COMPONENTS ======
+    const Icon = ({ name, size = 20, className = '', style = {} }) => {
+      const ref = React.useRef(null);
+      useEffect(() => {
+        if (ref.current && lucide.icons[name]) {
+          ref.current.innerHTML = '';
+          const svg = lucide.createElement(lucide.icons[name]);
+          svg.setAttribute('width', size);
+          svg.setAttribute('height', size);
+          if (className) svg.setAttribute('class', className);
+          Object.assign(svg.style, style);
+          ref.current.appendChild(svg);
+        }
+      }, [name, size, className]);
+      return <span ref={ref} style={{display: 'inline-flex', alignItems: 'center', ...style}} />;
+    };
+
+    // ====== DEMO DATA GENERATOR ======
+    function generateDemoData() {
+      const period = 3.5247, t0 = 1325.8, depth = 0.0085, duration = 0.12;
+      const timeSeries = [], numPoints = 500, tStart = 1325.0, tEnd = 1339.0;
+
+      for (let i = 0; i < numPoints; i++) {
+        const t = tStart + (i / numPoints) * (tEnd - tStart);
+        let flux = 1.0;
+        const phase = ((t - t0) % period + period) % period;
+        if (phase < duration / 2 || phase > period - duration / 2) {
+          const pfc = phase < period / 2 ? phase : phase - period;
+          flux = Math.max(1 - depth * (1 - (pfc / (duration / 2)) ** 2), 1 - depth);
+        }
+        flux += (Math.random() - 0.5) * 0.002;
+        timeSeries.push({ time: +t.toFixed(4), flux: +flux.toFixed(6) });
+      }
+
+      const phaseFolded = timeSeries.map(d => {
+        let ph = ((d.time - t0) / period) % 1.0;
+        if (ph > 0.5) ph -= 1.0;
+        return { phase: +ph.toFixed(5), flux: d.flux };
+      }).sort((a, b) => a.phase - b.phase);
+
+      return {
+        metrics: { tic_id: '149603524', classification: 'Confirmed/Candidate Planet Transit', confidence: 87.42, period, snr: 12.87, priority: 'High Priority', notes: 'Strong periodic transit signal. Consistent with hot Jupiter.' },
+        additional_metrics: { duration_hours: +(duration * 24).toFixed(2), depth },
+        plot_data: { time_series: timeSeries, phase_folded: phaseFolded },
+        probabilities: [
+          { name: 'Planet Transit', value: 87.42, color: '#22c55e' },
+          { name: 'Noise / Artifact', value: 8.31, color: '#6366f1' },
+          { name: 'Eclipsing Binary', value: 4.27, color: '#fb923c' }
+        ],
+        isDemo: true
+      };
+    }
+
+    const DEMO_CATALOG = [
+      { tic_id: '149603524', classification: 'Confirmed/Candidate Planet Transit', confidence: 87.42, period: 3.5247, snr: 12.87, priority: 'High Priority', notes: 'Hot Jupiter candidate, deep transit signal.' },
+      { tic_id: '307210830', classification: 'Confirmed/Candidate Planet Transit', confidence: 92.10, period: 1.2635, snr: 18.44, priority: 'Immediate Follow-up', notes: 'Ultra-short period planet. Very high confidence.' },
+      { tic_id: '261136679', classification: 'Eclipsing Binary System', confidence: 95.63, period: 6.4410, snr: 42.16, priority: 'Routine', notes: 'V-shaped transit. EB confirmed via RV follow-up.' },
+      { tic_id: '410214986', classification: 'Confirmed/Candidate Planet Transit', confidence: 73.88, period: 8.1392, snr: 7.21, priority: 'High Priority', notes: 'Shallow transit, possible super-Earth in HZ.' },
+      { tic_id: '55652896', classification: 'Noise Background', confidence: 61.05, period: 2.0871, snr: 3.14, priority: 'Routine', notes: 'Likely stellar variability / systematics.' }
+    ];
+
+    // ====== CUSTOM TOOLTIP ======
+    const ChartTip = ({ active, payload, label, xName, yName }) => {
+      if (!active || !payload?.length) return null;
+      return (
+        <div style={{ background: '#111a2e', border: '1px solid #1e3060', borderRadius: 8, padding: '9px 13px', boxShadow: '0 8px 20px rgba(0,0,0,0.5)', fontSize: '0.76rem' }}>
+          <p style={{ color: '#8b95b8', marginBottom: 3 }}>{xName||'X'}: <span style={{ color: '#e8ecf8', fontFamily: 'var(--font-mono)' }}>{typeof label==='number' ? label.toFixed(4) : label}</span></p>
+          {payload.map((p,i) => (
+            <p key={i} style={{ color: p.color||'#818cf8' }}>{yName||p.name||'Y'}: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{p.value?.toFixed(6)}</span></p>
+          ))}
+        </div>
+      );
+    };
+
+    // ====== MAIN APP ======
+    function App() {
+      const [ticId, setTicId] = useState('149603524');
+      const [priority, setPriority] = useState('Routine');
+      const [notes, setNotes] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [result, setResult] = useState(null);
+      const [catalog, setCatalog] = useState([]);
+      const [tab, setTab] = useState('dashboard');
+      const [isDemo, setIsDemo] = useState(false);
+
+      useEffect(() => {
+        // Load demo immediately so dashboard shows graphs
+        setResult(generateDemoData());
+        setIsDemo(true);
+        setCatalog(DEMO_CATALOG);
+      }, []);
+
+      const runPipeline = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+          const res = await fetch('http://localhost:8000/api/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tic_id: ticId, priority, notes })
+          });
+          if (!res.ok) throw new Error('Backend error');
+          const data = await res.json();
+          data.probabilities = data.probabilities || [
+            { name: 'Planet Transit', value: data.metrics.classification.includes('Planet') ? data.metrics.confidence : 10, color: '#22c55e' },
+            { name: 'Noise / Artifact', value: data.metrics.classification.includes('Noise') ? data.metrics.confidence : 8, color: '#6366f1' },
+            { name: 'Eclipsing Binary', value: data.metrics.classification.includes('Binary') ? data.metrics.confidence : 5, color: '#fb923c' }
+          ];
+          data.isDemo = false;
+          setResult(data);
+          setIsDemo(false);
+          // refresh catalog
+          try {
+            const catRes = await fetch('http://localhost:8000/api/targets');
+            setCatalog(await catRes.json());
+          } catch {}
+        } catch {
+          const demo = generateDemoData();
+          demo.metrics.tic_id = ticId;
+          demo.metrics.priority = priority;
+          demo.metrics.notes = notes || demo.metrics.notes;
+          setResult(demo);
+          setIsDemo(true);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const loadDemo = () => {
+        setResult(generateDemoData());
+        setIsDemo(true);
+        setCatalog(DEMO_CATALOG);
+      };
+
+      return (
+        <div>
+          {/* HEADER */}
+          <header className="header">
+            <div className="header-brand">
+              <Icon name="activity" size={32} className="header-icon" />
+              <div>
+                <div className="header-title">Exoplanet Discovery Engine</div>
+                <div className="header-sub">Deep Learning Photometric Transit Detection Pipeline</div>
+              </div>
+            </div>
+            <div className="tab-nav">
+              <button className={`tab-btn ${tab==='dashboard'?'active':''}`} onClick={()=>setTab('dashboard')}>📊 Analytics Dashboard</button>
+              <button className={`tab-btn ${tab==='catalog'?'active':''}`} onClick={()=>setTab('catalog')}>🗃️ Target Catalog</button>
+            </div>
+          </header>
+
+          <main className="main">
+            {tab === 'dashboard' ? (
+              <div className="dash-grid">
+                {/* LEFT PANEL */}
+                <div className="panel">
+                  <h2 className="panel-title">
+                    <Icon name="search" size={16} /> Analysis Controls
+                  </h2>
+                  <form onSubmit={runPipeline}>
+                    <div className="form-group">
+                      <label className="form-label">Target TIC ID</label>
+                      <input className="form-input" value={ticId} onChange={e=>setTicId(e.target.value)} placeholder="e.g. 149603524" required />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Follow-up Priority</label>
+                      <select className="form-select" value={priority} onChange={e=>setPriority(e.target.value)}>
+                        <option>Routine</option>
+                        <option>High Priority</option>
+                        <option>Immediate Follow-up</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Observation Notes</label>
+                      <textarea className="form-textarea" value={notes} onChange={e=>setNotes(e.target.value)} rows="3" placeholder="Annotate transit features..." />
+                    </div>
+                    <button type="submit" className="btn-primary" disabled={loading}>
+                      {loading ? <><span className="spinner" /> Processing...</> : <><Icon name="zap" size={15} /> Execute Pipeline</>}
+                    </button>
+                    <button type="button" className="btn-demo" onClick={loadDemo}>
+                      <Icon name="sparkles" size={14} /> Load Demo Data
+                    </button>
+                  </form>
+                </div>
+
+                {/* RIGHT RESULTS */}
+                <div className="results">
+                  {result ? (
+                    <>
+                      {isDemo && (
+                        <div className="demo-banner">
+                          <Icon name="star" size={15} />
+                          Demo mode — showing synthetic exoplanet transit. Connect backend at localhost:8000 for live analysis.
+                        </div>
+                      )}
+
+                      {/* Metrics Row 1 */}
+                      <div className="metrics-grid">
+                        <div className="metric-card">
+                          <p className="metric-label">Model Classification</p>
+                          <p className="metric-val indigo">{result.metrics.classification}</p>
+                        </div>
+                        <div className="metric-card">
+                          <p className="metric-label">Signal Confidence</p>
+                          <p className="metric-val green">{result.metrics.confidence.toFixed(2)}%</p>
+                        </div>
+                        <div className="metric-card">
+                          <p className="metric-label">Signal-to-Noise Ratio</p>
+                          <p className="metric-val yellow">{result.metrics.snr}</p>
+                        </div>
+                      </div>
+
+                      {/* Metrics Row 2 */}
+                      <div className="metrics-grid">
+                        <div className="metric-card">
+                          <p className="metric-label">Orbital Period</p>
+                          <p className="metric-mono">{result.metrics.period} days</p>
+                        </div>
+                        <div className="metric-card">
+                          <p className="metric-label">Transit Duration</p>
+                          <p className="metric-mono">{result.additional_metrics.duration_hours} hours</p>
+                        </div>
+                        <div className="metric-card">
+                          <p className="metric-label">Transit Depth</p>
+                          <p className="metric-mono">{result.additional_metrics.depth.toFixed(6)}</p>
+                        </div>
+                      </div>
+
+                      {/* Charts Row 1 */}
+                      <div className="charts-grid">
+                        <div className="chart-panel">
+                          <h3 className="chart-title"><span className="dot dot-cyan" /> Flattened Light Curve</h3>
+                          <div className="chart-container">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={result.plot_data.time_series}>
+                                <defs>
+                                  <linearGradient id="gr1" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.18}/>
+                                    <stop offset="95%" stopColor="#22d3ee" stopOpacity={0}/>
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#162040" />
+                                <XAxis dataKey="time" stroke="#3d4766" tick={{fontSize:10,fill:'#5a6585'}} domain={['auto','auto']} type="number" tickFormatter={v=>v.toFixed(1)} />
+                                <YAxis stroke="#3d4766" tick={{fontSize:10,fill:'#5a6585'}} domain={['auto','auto']} type="number" tickFormatter={v=>v.toFixed(4)} />
+                                <Tooltip content={<ChartTip xName="BJD" yName="Flux" />} />
+                                <Area type="monotone" dataKey="flux" stroke="#22d3ee" fill="url(#gr1)" strokeWidth={1.5} dot={false} />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+
+                        <div className="chart-panel">
+                          <h3 className="chart-title"><span className="dot dot-indigo" /> Phase-Folded Transit</h3>
+                          <div className="chart-container">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ScatterChart>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#162040" />
+                                <XAxis dataKey="phase" stroke="#3d4766" tick={{fontSize:10,fill:'#5a6585'}} domain={['auto','auto']} type="number" name="Phase" tickFormatter={v=>v.toFixed(2)} />
+                                <YAxis dataKey="flux" stroke="#3d4766" tick={{fontSize:10,fill:'#5a6585'}} domain={['auto','auto']} type="number" name="Flux" tickFormatter={v=>v.toFixed(4)} />
+                                <Tooltip content={<ChartTip xName="Phase" yName="Flux" />} />
+                                <Scatter data={result.plot_data.phase_folded} fill="#818cf8" r={2} fillOpacity={0.55} />
+                              </ScatterChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Charts Row 2 */}
+                      <div className="charts-grid">
+                        <div className="chart-panel">
+                          <h3 className="chart-title"><span className="dot dot-green" /> Classification Probabilities</h3>
+                          <div className="prob-bars">
+                            {(result.probabilities||[]).map((item,i) => (
+                              <div className="prob-item" key={i}>
+                                <div className="prob-header">
+                                  <span>{item.name}</span>
+                                  <span className="prob-val" style={{color:item.color}}>{item.value.toFixed(2)}%</span>
+                                </div>
+                                <div className="prob-track">
+                                  <div className={`prob-fill ${i===0?'prob-fill-green':i===1?'prob-fill-indigo':'prob-fill-orange'}`} style={{width:`${item.value}%`}} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="chart-panel">
+                          <h3 className="chart-title"><span className="dot dot-purple" /> Transit Signal Overview</h3>
+                          <div className="chart-container">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={[
+                                { name: 'SNR', value: result.metrics.snr, fill: '#facc15' },
+                                { name: 'Conf/10', value: result.metrics.confidence/10, fill: '#22c55e' },
+                                { name: 'Period', value: result.metrics.period, fill: '#818cf8' },
+                                { name: 'Depth×1k', value: result.additional_metrics.depth*1000, fill: '#c084fc' },
+                                { name: 'Dur(h)', value: result.additional_metrics.duration_hours, fill: '#22d3ee' }
+                              ]}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#162040" />
+                                <XAxis dataKey="name" stroke="#3d4766" tick={{fontSize:10,fill:'#5a6585'}} />
+                                <YAxis stroke="#3d4766" tick={{fontSize:10,fill:'#5a6585'}} />
+                                <Tooltip contentStyle={{background:'#111a2e',border:'1px solid #1e3060',borderRadius:8,fontSize:'0.76rem'}} labelStyle={{color:'#8b95b8'}} itemStyle={{color:'#e8ecf8'}} />
+                                <Bar dataKey="value" radius={[5,5,0,0]}>
+                                  {['#facc15','#22c55e','#818cf8','#c084fc','#22d3ee'].map((c,i)=><Cell key={i} fill={c} fillOpacity={0.75} />)}
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="empty-state">
+                      <Icon name="shield-alert" size={48} />
+                      <p>Pipeline idle. Enter a TIC ID and execute the pipeline, or click "Load Demo Data" to see charts.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* CATALOG TAB */
+              <div className="panel" style={{animation: 'fadeIn 0.35s ease-out'}}>
+                <div className="catalog-header">
+                  <div>
+                    <div className="catalog-title"><Icon name="database" size={20} /> Exoplanet Discovery Catalog</div>
+                    <p className="catalog-sub">{isDemo ? 'Demo catalog — connect backend for live data' : 'Logged detections from pipeline analysis'}</p>
+                  </div>
+                </div>
+                {catalog.length === 0 ? (
+                  <p className="catalog-empty">No targets analyzed yet. Run the pipeline to populate.</p>
+                ) : (
+                  <div className="table-wrap">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>TIC ID</th><th>Classification</th><th>Confidence</th><th>Period</th><th>SNR</th><th>Priority</th><th>Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {catalog.map((item, idx) => (
+                          <tr key={idx}>
+                            <td className="td-id">{item.tic_id}</td>
+                            <td className="td-cls">{item.classification}</td>
+                            <td className="td-green">{item.confidence.toFixed(2)}%</td>
+                            <td className="td-white">{item.period} days</td>
+                            <td className="td-yellow">{item.snr}</td>
+                            <td>
+                              <span className={`badge ${item.priority==='Routine'?'badge-routine':item.priority==='High Priority'?'badge-high':'badge-immediate'}`}>
+                                {item.priority}
+                              </span>
+                            </td>
+                            <td className="td-notes">{item.notes}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

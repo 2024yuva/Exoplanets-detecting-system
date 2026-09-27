@@ -1,0 +1,22 @@
+[
+    "Imaging Observations",
+    "Spectroscopy Observations",
+    "Time Series Observations",
+    "Predicted Mass (M_Earth)",
+    "Predicted Radial Velocity Semi-amplitude (m/s)",
+    "TESS Mag",
+    "Planet Num",
+    "Period (days)",
+    "Duration (hours)",
+    "Depth (ppm)",
+    "Planet Radius (R_Earth)",
+    "Planet Insolation (Earth Flux)",
+    "Planet Equil Temp (K)",
+    "Planet SNR",
+    "Stellar Distance (pc)",
+    "Stellar Eff Temp (K)",
+    "Stellar log(g) (cm/s^2)",
+    "Stellar Radius (R_Sun)",
+    "Stellar Metallicity",
+    "Stellar Mass (M_Sun)"
+]

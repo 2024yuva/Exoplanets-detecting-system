@@ -1,0 +1,38 @@
+{
+  "rows_raw": 8064,
+  "rows_train": 5644,
+  "rows_val": 1211,
+  "rows_test": 1209,
+  "analysis_class_distribution": {
+    "confirmed_or_candidate": 6235,
+    "false_positive": 1346,
+    "other": 483
+  },
+  "raw_disposition_distribution": {
+    "PC": 4900,
+    "FP": 1246,
+    "CP": 742,
+    "KP": 593,
+    "APC": 483,
+    "FA": 100
+  },
+  "feature_columns": [
+    "Period (days)",
+    "Duration (hours)",
+    "Depth (ppm)",
+    "Planet Radius (R_Earth)",
+    "Planet SNR",
+    "Stellar Eff Temp (K)",
+    "Stellar Radius (R_Sun)",
+    "Stellar Mass (M_Sun)",
+    "Stellar log(g) (cm/s^2)",
+    "Stellar Distance (pc)",
+    "Predicted Mass (M_Earth)",
+    "Predicted Radial Velocity Semi-amplitude (m/s)",
+    "Planet Insolation (Earth Flux)",
+    "Planet Equil Temp (K)",
+    "RA",
+    "Dec",
+    "Epoch (BJD)"
+  ]
+}

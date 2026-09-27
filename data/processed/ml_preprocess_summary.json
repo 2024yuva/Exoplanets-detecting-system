@@ -1,0 +1,24 @@
+{
+    "original_shape": [
+        8061,
+        63
+    ],
+    "selected_features": 20,
+    "train_shape": [
+        5642,
+        20
+    ],
+    "validation_shape": [
+        1209,
+        20
+    ],
+    "test_shape": [
+        1210,
+        20
+    ],
+    "classes": [
+        "Candidate",
+        "Confirmed",
+        "False Positive"
+    ]
+}

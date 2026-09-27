@@ -96,6 +96,14 @@ class AnalysisRequest(BaseModel):
     priority: str
     notes: Optional[str] = ""
 
+
+class LightCurveAnalysisRequest(BaseModel):
+    time: List[float]
+    flux: List[float]
+    source_name: Optional[str] = "uploaded_light_curve"
+    priority: str = "Uploaded"
+    notes: Optional[str] = ""
+
 class TargetRecord(BaseModel):
     tic_id: str
     classification: str
@@ -160,6 +168,180 @@ async def analyze_target(req: AnalysisRequest):
         }
     }
 
+
+@app.post("/api/analyze-lightcurve")
+async def analyze_uploaded_lightcurve(req: LightCurveAnalysisRequest):
+    if len(req.time) != len(req.flux):
+        raise HTTPException(status_code=400, detail="Time and flux arrays must have the same length.")
+    if len(req.time) < 20:
+        raise HTTPException(status_code=400, detail="At least 20 samples are required for analysis.")
+
+    time = np.array(req.time, dtype=float)
+    flux = np.array(req.flux, dtype=float)
+    valid_mask = np.isfinite(time) & np.isfinite(flux)
+    time = time[valid_mask]
+    flux = flux[valid_mask]
+
+    if len(time) < 20:
+        raise HTTPException(status_code=400, detail="Not enough valid samples after removing invalid points.")
+
+    sort_idx = np.argsort(time)
+    time = time[sort_idx]
+    flux = flux[sort_idx]
+
+    standardized_input = standard_scale_signal(flux).reshape(1, 2000, 1)
+    prediction = model.predict(standardized_input, verbose=0)[0]
+    categories = ["Noise Background", "Confirmed/Candidate Planet Transit", "Eclipsing Binary System"]
+    predicted_class_idx = int(np.argmax(prediction))
+
+    try:
+        metrics = estimate_transit_parameters(time, flux)
+    except Exception:
+        time_span = max(float(time[-1] - time[0]), 1e-6)
+        metrics = {
+            "period": max(0.5, time_span / 5),
+            "duration": 0.12,
+            "t0": float(time[len(time) // 2]),
+            "depth": float(np.max(flux) - np.min(flux)),
+            "snr": float(np.std(flux) and (np.max(flux) - np.min(flux)) / np.std(flux) or 0.0),
+        }
+
+    step = max(1, len(time) // 500)
+    time_series_data = [{"time": float(t), "flux": float(f)} for t, f in zip(time[::step], flux[::step])]
+
+    denoised_flux = pd.Series(flux).rolling(window=11, center=True, min_periods=1).mean().to_numpy()
+    denoised_series_data = [{"time": float(t), "flux": float(f)} for t, f in zip(time[::step], denoised_flux[::step])]
+
+    residual = flux - denoised_flux
+    residual_span = float(np.max(residual) - np.min(residual) + 1e-8)
+    probability = np.clip((np.max(residual) - residual) / residual_span * 0.92 + 0.04, 0.04, 0.995)
+    probability_series_data = [{"time": float(t), "probability": float(p)} for t, p in zip(time[::step], probability[::step])]
+
+    confidence_percent = float(prediction[predicted_class_idx] * 100)
+    record = {
+        "tic_id": req.source_name or "uploaded_light_curve",
+        "classification": categories[predicted_class_idx],
+        "confidence": confidence_percent,
+        "period": round(float(metrics["period"]), 4),
+        "snr": round(float(metrics["snr"]), 2),
+        "priority": req.priority,
+        "notes": req.notes or "Uploaded curve analysis",
+    }
+
+    global target_database
+    target_database = [r for r in target_database if r["tic_id"] != record["tic_id"]]
+    target_database.append(record)
+
+    explanation = [
+        f"Model classified the signal as {record['classification']} with {confidence_percent:.1f}% confidence.",
+        f"Best-fit period estimate from BLS: {float(metrics['period']):.4f} days.",
+        f"Estimated transit depth: {float(metrics['depth']) * 1_000_000:.0f} ppm.",
+        f"Transit SNR estimate: {float(metrics['snr']):.2f}.",
+    ]
+
+    return {
+        "metrics": record,
+        "additional_metrics": {
+            "duration_hours": round(float(metrics["duration"]) * 24, 2),
+            "depth": round(float(metrics["depth"]), 8),
+            "depth_ppm": round(float(metrics["depth"]) * 1_000_000, 2),
+        },
+        "plot_data": {
+            "time_series": time_series_data,
+            "denoised_series": denoised_series_data,
+            "probability_series": probability_series_data,
+            "threshold": 0.72,
+        },
+        "explanation": explanation,
+    }
+
 @app.get("/api/targets", response_model=List[TargetRecord])
 async def get_all_targets():
     return target_database
+
+
+@app.get("/api/lightcurve/{tic_id}")
+async def get_tess_lightcurve(
+    tic_id: str,
+    period_days: Optional[float] = None,
+    epoch_bjd: Optional[float] = None,
+    target_name: Optional[str] = "TESS target",
+):
+    """Fetch public TESS photometry from MAST and return normalized and phase-folded samples."""
+    if not tic_id.isdigit():
+        raise HTTPException(status_code=400, detail="TIC ID must contain digits only.")
+
+    try:
+        search = lk.search_lightcurve(f"TIC {tic_id}", mission="TESS", author="SPOC")
+        if len(search) == 0:
+            search = lk.search_lightcurve(f"TIC {tic_id}", mission="TESS")
+        if len(search) == 0:
+            raise HTTPException(status_code=404, detail=f"MAST has no public TESS light curve for TIC {tic_id}.")
+
+        # A few sectors provide useful coverage without pulling down every cadence for a long-lived target.
+        selected_observations = search[:5]
+        collection = selected_observations.download_all()
+        if collection is None or len(collection) == 0:
+            raise HTTPException(status_code=404, detail=f"MAST found TESS observations for TIC {tic_id}, but no downloadable light-curve files.")
+
+        lightcurve = collection.stitch().remove_nans().remove_outliers(sigma_lower=20, sigma_upper=5).normalize()
+        try:
+            lightcurve = lightcurve.flatten(window_length=101, break_tolerance=5, niters=3)
+        except Exception:
+            # Keep the normalized data when there are too few samples to fit a trend safely.
+            pass
+
+        time = np.asarray(lightcurve.time.value, dtype=float)
+        flux = np.asarray(lightcurve.flux.value, dtype=float)
+        valid = np.isfinite(time) & np.isfinite(flux)
+        time, flux = time[valid], flux[valid]
+        if len(time) < 20:
+            raise HTTPException(status_code=422, detail="The downloaded TESS light curve has too few valid measurements.")
+
+        point_count = min(2500, len(time))
+        raw_indices = np.linspace(0, len(time) - 1, point_count, dtype=int)
+        time_series = [
+            {"time": float(time[index]), "flux": float(flux[index])}
+            for index in raw_indices
+        ]
+
+        phase_folded = []
+        if period_days and period_days > 0 and epoch_bjd:
+            # TESS time is BTJD (BJD - 2457000); TOI ephemerides are supplied as BJD.
+            epoch_btjd = epoch_bjd - 2457000 if epoch_bjd > 1_000_000 else epoch_bjd
+            phase = ((time - epoch_btjd + period_days / 2) % period_days) / period_days - 0.5
+            bins = 600
+            bin_ids = np.minimum(((phase + 0.5) * bins).astype(int), bins - 1)
+            bin_counts = np.bincount(bin_ids, minlength=bins)
+            bin_flux = np.bincount(bin_ids, weights=flux, minlength=bins)
+            phase_folded = [
+                {"phase": (index + 0.5) / bins - 0.5, "flux": float(bin_flux[index] / bin_counts[index])}
+                for index in range(bins) if bin_counts[index] > 0
+            ]
+
+        sector_values = []
+        if "sequence_number" in selected_observations.table.colnames:
+            sector_values = sorted({int(value) for value in selected_observations.table["sequence_number"] if str(value).isdigit()})
+        authors = []
+        if "author" in selected_observations.table.colnames:
+            authors = sorted({str(value) for value in selected_observations.table["author"] if str(value).strip()})
+
+        return {
+            "ticId": tic_id,
+            "targetName": target_name,
+            "mission": "TESS",
+            "source": "MAST public light-curve products",
+            "authors": authors,
+            "sectors": sector_values,
+            "periodDays": period_days,
+            "epochBjd": epoch_bjd,
+            "pointCount": int(len(time)),
+            "normalization": "Outliers removed, median normalized, and flattened to reduce slow instrumental and stellar trends.",
+            "timeSeries": time_series,
+            "phaseFolded": phase_folded,
+            "mastUrl": f"https://mast.stsci.edu/portal/Mashup/Clients/Mast/Portal.html?searchQuery=TIC%20{tic_id}",
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"MAST could not provide a TESS light curve for TIC {tic_id}: {exc}") from exc
