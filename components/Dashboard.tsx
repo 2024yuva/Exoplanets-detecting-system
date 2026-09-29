@@ -7,7 +7,8 @@ import CachedLightCurve from "@/components/CachedLightCurve";
 import LightCurveGallery from "@/components/LightCurveGallery";
 import { ArrowDown, ArrowRight, ChevronDown, MessageCircle, Search, Send, X } from "lucide-react";
 
-const worlds = exoplanets.filter((planet) => planet.id !== "moon");
+const earthReference = exoplanets.find((planet) => planet.id === "earth") ?? exoplanets[0];
+const worlds = exoplanets.filter((planet) => planet.id !== "earth");
 const k218Image = "https://assets.science.nasa.gov/dynamicimage/assets/science/missions/webb/science/2023/09/STScI-01H9R8AEK6Y7QR03MGN9V9P6ZJ.jpg?crop=faces%2Cfocalpoint&fit=clip&h=1080&w=1920";
 const earthImage = "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/solar/2023/12/PIA18033.jpg?crop=faces%2Cfocalpoint&fit=clip&h=1200&w=1900";
 const jupiterImage = "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia01/pia01509/PIA01509.jpg?crop=faces%2Cfocalpoint&fit=clip&h=400&w=400";
@@ -37,6 +38,16 @@ type CachedLightCurve = {
   processingDate?: string;
 };
 
+type LiveLightCurve = {
+  targetName?: string;
+  mission?: string;
+  source?: string;
+  periodDays?: number;
+  sectors?: (string | number)[];
+  pointCount?: number;
+  phaseFolded?: { phase: number; flux: number }[];
+};
+
 function Orb({ planet, className = "" }: { planet: Exoplanet; className?: string }) {
   if (planet.id === "earth") return <span className={`orb orb-earth ${className}`} style={{ backgroundImage: `url(${earthImage})` }} />;
   if (planet.id === "jupiter") return <span className={`orb orb-jupiter ${className}`} style={{ backgroundImage: `url(${jupiterImage})` }} />;
@@ -63,7 +74,7 @@ export default function Dashboard() {
   const compareValue = sizeMode === "radius" ? selected.radiusEarth : selected.massEarth;
   const compareUnit = sizeMode === "radius" ? "Earth radii" : "Earth masses";
 
-  const isSolarSystemReference = ["earth", "neptune", "jupiter"].includes(selected.id);
+  const isSolarSystemReference = false;
   const hasRadialVelocityDetection = selected.id === "proxima-b";
 
   useEffect(() => {
@@ -73,13 +84,34 @@ export default function Dashboard() {
     if (isSolarSystemReference || hasRadialVelocityDetection) return () => controller.abort();
 
     const cache = lightCurveFiles[selected.id] ?? { file: selected.id, cacheId: selected.id };
+    const useCurve = (curve: CachedLightCurve | null) => {
+      if (!curve || !curve.observed || curve.mode !== "phase-folded" || !Array.isArray(curve.points)) return false;
+      const validPoints = curve.points.filter((point) => Number.isFinite(point.phase) && Number.isFinite(point.flux));
+      if (validPoints.length < 2) return false;
+      setCachedCurve({ ...curve, points: validPoints });
+      return true;
+    };
     fetch(`/lightcurves/${encodeURIComponent(cache.file)}.json`, { signal: controller.signal, cache: "force-cache" })
       .then(async (response) => response.ok ? await response.json() as CachedLightCurve : null)
-      .then((curve) => {
-        if (!controller.signal.aborted && (curve?.planetId === selected.id || curve?.planetId === cache.cacheId) && curve.observed === true && curve.mode === "phase-folded" && Array.isArray(curve.points)) {
-          const validPoints = curve.points.filter((point) => Number.isFinite(point.phase) && Number.isFinite(point.flux));
-          setCachedCurve(validPoints.length >= 2 ? { ...curve, points: validPoints } : null);
-        }
+      .then(async (curve) => {
+        if (controller.signal.aborted || useCurve(curve)) return;
+        const response = await fetch(`/api/lightcurve?planetId=${encodeURIComponent(selected.id)}`, { signal: controller.signal, cache: "no-store" });
+        if (!response.ok) return;
+        const live = await response.json() as LiveLightCurve;
+        const points = (live.phaseFolded ?? []).filter((point) => Number.isFinite(point.phase) && Number.isFinite(point.flux));
+        if (points.length < 2 || controller.signal.aborted) return;
+        useCurve({
+          planet: live.targetName ?? selected.name,
+          planetId: selected.id,
+          observed: true,
+          mission: live.mission ?? "TESS",
+          source: live.source ?? "MAST",
+          mode: "phase-folded",
+          periodDays: live.periodDays ?? selected.orbitalPeriodDays,
+          points,
+          sector: live.sectors?.join(", "),
+          numberOfRawPoints: live.pointCount,
+        });
       })
       .catch(() => undefined)
       .finally(() => { if (!controller.signal.aborted) setCurveLoading(false); });
@@ -180,15 +212,15 @@ export default function Dashboard() {
       <aside className="world-list">
         <div className="panel-heading"><div><span className="section-number">A</span><div><h3>Choose a world</h3><p>{worlds.length} featured objects</p></div></div></div>
         <label className="search-box"><Search size={15} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search planets" aria-label="Search planets" /></label>
-         <div className="world-options">{filteredWorlds.map((planet) => <button className={`world-option ${selected.id === planet.id ? "selected" : ""}`} key={planet.id} onClick={() => setSelected(planet)} aria-pressed={selected.id === planet.id}><Orb planet={planet} className="option-orb" /><span><strong>{planet.name}</strong><small>{planet.planetType}{["earth", "neptune", "jupiter"].includes(planet.id) ? " Â· Solar System reference" : ""}</small></span><ChevronDown size={15} className="option-arrow" /></button>)}</div>
+        <div className="world-options">{filteredWorlds.map((planet) => <button className={`world-option ${selected.id === planet.id ? "selected" : ""}`} key={planet.id} onClick={() => setSelected(planet)} aria-pressed={selected.id === planet.id}><Orb planet={planet} className="option-orb" /><span><strong>{planet.name}</strong><small>{planet.planetType}</small></span><ChevronDown size={15} className="option-arrow" /></button>)}</div>
         {!filteredWorlds.length && <p className="empty-search">No worlds match that search.</p>}
-        <div className="catalogue-note">SOLAR SYSTEM WORLDS ARE INCLUDED AS SIZE REFERENCES.</div>
+        <div className="catalogue-note">TEN EXOPLANETS AVAILABLE FOR SIZE COMPARISON.</div>
       </aside>
 
       <div className="comparison-panel">
         <div className="panel-heading compare-heading"><div><span className="section-number">B</span><div><h3>World scale</h3><p>Relative to Earth Â· diameter drawn to scale</p></div></div><div className="toggle" aria-label="Comparison measure"><button className={sizeMode === "radius" ? "active" : ""} onClick={() => setSizeMode("radius")}>Radius</button><button className={sizeMode === "mass" ? "active" : ""} onClick={() => setSizeMode("mass")}>Mass</button></div></div>
         <div className="scale-stage">
-          <div className="comparison-world earth-world"><div className="globe-wrap" style={{ width: `${earthDiameter}px`, height: `${earthDiameter}px` }}><Orb planet={exoplanets[0]} /></div><span>EARTH</span><small>1.0 RâŠ•</small></div>
+          <div className="comparison-world earth-world"><div className="globe-wrap" style={{ width: `${earthDiameter}px`, height: `${earthDiameter}px` }}><Orb planet={earthReference} /></div><span>EARTH</span><small>1.0 RâŠ•</small></div>
           <div className="scale-rule"><span /><small>SAME SCALE</small><span /></div>
           <div className="comparison-world selected-world"><div className="globe-wrap" style={{ width: `${selectedDiameter}px`, height: `${selectedDiameter}px` }}><Orb planet={selected} /></div><span>{selected.name.toUpperCase()}</span><small>{selected.radiusEarth.toFixed(2)} RâŠ•</small></div>
         </div>
@@ -201,7 +233,7 @@ export default function Dashboard() {
         <>
           <div className="facts-visual"><Orb planet={selected} className="facts-orb" /><div><span>PLANET TYPE</span><strong>{selected.planetType}</strong></div></div>
           <p className="fact-summary">{selected.description}</p>
-          <div className="fact-table"><div><span>Radius</span><strong>{selected.radiusEarth} RâŠ•</strong></div><div><span>Mass</span><strong>{selected.massEarth} MâŠ•</strong></div><div><span>Orbital period</span><strong>{selected.orbitalPeriodDays.toLocaleString()} days</strong></div><div><span>Distance</span><strong>{selected.distanceLightYears < 0.01 ? "Solar System" : `${selected.distanceLightYears} light-years`}</strong></div><div><span>Discovery method</span><strong>{selected.discoveryMethod}</strong></div><div><span>Host star</span><strong>{selected.hostStar}</strong></div></div>
+          <div className="fact-table"><div><span>Radius</span><strong>{selected.radiusEarth} RâŠ•</strong></div><div><span>Mass</span><strong>{selected.massEarth} MâŠ•</strong></div><div><span>Orbital period</span><strong>{selected.orbitalPeriodDays.toLocaleString()} days</strong></div><div><span>Transit duration</span><strong>{selected.transitDurationHours ? `${selected.transitDurationHours.toFixed(2)} hours` : "Not measured"}</strong></div><div><span>Transit depth</span><strong>{selected.transitDepthPpm ? `${selected.transitDepthPpm.toLocaleString()} ppm` : "Not measured"}</strong></div><div><span>Signal</span><strong>{selected.signalClassification ?? selected.discoveryMethod}</strong></div><div><span>Confidence</span><strong>{selected.signalConfidence ? `${(selected.signalConfidence * 100).toFixed(1)}%` : "Not measured"}</strong></div><div><span>Distance</span><strong>{selected.distanceLightYears} light-years</strong></div><div><span>Discovery method</span><strong>{selected.discoveryMethod}</strong></div><div><span>Host star</span><strong>{selected.hostStar}</strong></div></div>
           <div className="habitable-note"><span className={selected.habitableZone ? "zone-dot" : "zone-dot muted"} />{selected.habitableZone ? "In the habitable zone" : "Outside the habitable zone"}<small>This describes starlight received, not evidence of life.</small></div>
         </>
       </aside>

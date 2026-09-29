@@ -10,6 +10,15 @@ function numberParameter(url: URL, key: string) {
   return Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
+const archiveNames: Record<string, string> = {
+  "55-cancri-e": "55 Cnc e",
+  "wasp-12b": "WASP-12 b",
+  "hd-209458-b": "HD 209458 b",
+  "kepler-186f": "Kepler-186 f",
+  "lhs-1140b": "LHS 1140 b",
+  "toi-700d": "TOI-700 d",
+};
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   let ticId = searchParams.get("ticId")?.replace(/\D/g, "") ?? "";
@@ -24,7 +33,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "Select an exoplanet or search the TESS target catalog." }, { status: 400 });
     }
 
-    const archiveName = selected.id === "proxima-b" ? "Proxima Cen b" : selected.name;
+    const archiveName = archiveNames[selected.id] ?? (selected.id === "proxima-b" ? "Proxima Cen b" : selected.name);
     const record = findCatalogPlanets(archiveName, 1)[0];
     ticId = record?.tic_id?.replace(/\D/g, "") ?? "";
     periodDays ??= Number(record?.pl_orbper) || undefined;
